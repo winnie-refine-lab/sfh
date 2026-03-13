@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SFH Parkside Residences</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Infant:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+TC:wght@300;400;500;700&family=Pinyon+Script&display=swap"
+        rel="stylesheet">
+
+    <!-- Swiper.js -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1F3023',
+                        secondary: '#556856',
+                        gold: '#C1A37D',
+                    },
+                    fontFamily: {
+                        serif: ['"Cormorant Infant"', 'serif'],
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                        script: ['"Pinyon Script"', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- GSAP & ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    
+    <!-- Lenis Smooth Scroll -->
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.27/bundled/lenis.min.js"></script>
+
+    <style>
+        /* Custom Styles & Scrollbar */
+        body {
+            background-color: rgb(19, 31, 22);
+            color: white;
+            overflow-x: hidden;
+            overscroll-behavior: none; /* Prevents Mac bounce fight with Lenis */
+        }
+
+        /* Initial state: Hide main content, but keep loader visible */
+        .content-hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        body.loaded .content-hidden {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 1s ease;
+        }
+
+        body.loaded #hero-parallax {
+            visibility: visible !important;
+        }
+
+        /* Loading Screen Styles */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background-color: #F4F1ED; /* Premium Beige */
+            z-index: 100000;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+            padding: 4vw;
+            overflow: hidden;
+            visibility: visible !important;
+        }
+
+        #loader-counter {
+            font-family: "Cormorant Infant", serif;
+            font-size: clamp(8rem, 20vw, 25rem);
+            color: #131F16;
+            line-height: 0.8;
+            letter-spacing: -0.05em;
+            font-weight: 500;
+            user-select: none;
+            position: relative;
+        }
+
+        #loader-counter::after {
+            content: "%";
+            font-size: 0.2em;
+            vertical-align: super;
+            margin-left: 0.05em;
+        }
+
+        ::selection {
+            background-color: #C1A37D;
+            color: #1F3023;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1F3023;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #556856;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #C1A37D;
+        }
+
+        .park-thumb {
+            border-width: 1px !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+            transition: border-width 0.4s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .park-thumb img {
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .park-thumb:hover {
+            border-width: 5px !important;
+            border-color: #FFFFFF !important;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .park-thumb:hover img {
+            transform: scale(1.15);
+        }
+        
+        .park-thumb.active {
+            border-width: 5px !important;
+            border-color: #FFFFFF !important;
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+        }
+
+        /* Clear entry animations without blocking GSAP */
+        body .reveal, 
+        body .reveal.up, 
+        body .reveal.left, 
+        body .reveal.right, 
+        body .reveal.is-visible {
+            opacity: 1;
+            transform: none;
+            transition: none;
+        }
+
+        /* Hero Pulse Animation */
+        @keyframes customPulse {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(1.05);
+            }
+        }
+
+        .hero-bg-anim {
+            animation: customPulse 20s ease-in-out infinite alternate;
+        }
+
+        /* SVG Button Hover Draw Effect */
+        .btn-draw {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            color: white;
+            padding: 1.25rem 2.5rem;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.2rem;
+            font-size: 0.8125rem;
+            cursor: pointer;
+            overflow: visible;
+            transition: color 0.4s ease;
+            z-index: 1;
+            /* Give it a static thin border to start so the shape is visible */
+            border: 1px solid rgba(193, 163, 125, 0.5);
+        }
+
+        .btn-draw span {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* SVG Border Container */
+        .btn-draw svg {
+            position: absolute;
+            top: -1px; /* Offset the 1px border */
+            left: -1px;
+            width: calc(100% + 2px);
+            height: calc(100% + 2px);
+            pointer-events: none;
+            z-index: 0;
+            border-radius: 9999px;
+        }
+
+        .btn-draw rect {
+            fill: none;
+            stroke-width: 1.5;
+            rx: 999px; /* full rounded */
+            ry: 999px;
+            width: 100%;
+            height: 100%;
+            transform-origin: center;
+        }
+        
+        /* The animated stroke line */
+        .btn-draw rect.draw-line {
+            stroke: #C1A37D; /* Solid Gold */
+            stroke-dasharray: 100; /* Maps directly to pathLength="100" */
+            stroke-dashoffset: 100; /* Starts completely hidden */
+            transition: stroke-dashoffset 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Hover animation */
+        .btn-draw:hover {
+            color: #C1A37D;
+        }
+        
+        .btn-draw:hover rect.draw-line {
+            stroke-dashoffset: 0; /* Draw the full line */
+        }
+
+        /* Slant Clip Path */
+        .clip-path-slant {
+            clip-path: polygon(20% 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        /* Swiper Custom */
+        .swiper-pagination-bullet {
+            background: #FFFFFF !important;
+            opacity: 0.3;
+        }
+        .swiper-pagination-bullet-active {
+            opacity: 1;
+            transition: all 0.3s ease;
+        }
+
+        /* Slider Custom Cursor */
+        .amenities-slider .swiper-slide {
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        .amenities-slider .swiper-slide img {
+            will-change: transform;
+            transform: scale(1.2) translate3d(0,0,0); /* Hardware accelerated */
+        }
+
+        #hero-parallax, .parallax-number, .parallax-content, #map-image {
+            will-change: transform;
+            transform: translate3d(0,0,0); /* Hardware accelerated */
+        }
+
+        .slider-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 90px; /* Precise size like reference */
+            height: 90px;
+            background: rgba(19, 31, 22, 0.85); /* Dark SFH color */
+            border-radius: 50%;
+            z-index: 99999;
+            pointer-events: none;
+            will-change: transform;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+            transform: translate(-50%, -50%) scale(0.5); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .slider-cursor.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .slider-cursor .cursor-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+        }
+        .slider-cursor .arrows {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .slider-cursor .cursor-left,
+        .slider-cursor .cursor-right {
+            display: none; /* Hide both containers by default */
+        }
+        .slider-cursor.left .cursor-left {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .slider-cursor.right .cursor-right {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .slider-cursor i, .slider-cursor svg {
+            width: 48px; /* Larger arrows for visibility */
+            height: 48px;
+            color: #FFFFFF;
+            stroke-width: 2.5;
+        }
+
+        .amenities-slider {
+            cursor: none; /* Hide default cursor */
+        }
+
+        /* Creators Section Redesign (Exact CW Group Style) */
+        #creators-pin-wrapper {
+            position: relative;
+            background: #0d1a0e; /* Deep forest green */
+        }
+        #developers-section {
+            height: 100vh;
+            color: #FFFFFF;
+        }
+        .creator-row {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 8vh 6vw;
+            background: #0d1a0e;
+            display: grid;
+            grid-template-columns: 100px 1fr 1fr;
+            grid-template-rows: auto 1fr auto;
+            gap: 2rem;
+            will-change: transform;
+            z-index: 1;
+            border-top: 1px solid rgba(255,255,255,0.1); /* Subtle dividing line */
+        }
+        .creator-index {
+            grid-column: 1;
+            grid-row: 1;
+            font-size: 3.5rem;
+            font-family: serif;
+            font-weight: 300;
+            line-height: 1;
+        }
+        .creator-title-main {
+            grid-column: 2 / span 2;
+            grid-row: 1;
+            font-size: 4rem;
+            font-family: serif;
+            font-weight: 300;
+            line-height: 1.1;
+        }
+        .creator-img-wrap {
+            grid-column: 1 / span 2;
+            grid-row: 2;
+            align-self: center;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 16/10;
+            overflow: hidden;
+            border-radius: 2px;
+        }
+        .creator-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .creator-info-block {
+            grid-column: 3;
+            grid-row: 2;
+            align-self: flex-start;
+            padding-top: 2rem;
+            display: flex;
+            gap: 4rem;
+        }
+        .creator-info-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.4);
+            flex-shrink: 0;
+        }
+        .creator-description {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            font-weight: 300;
+            color: rgba(255,255,255,0.8);
+            max-width: 450px;
+        }
+        .creator-links-wrap {
+            grid-column: 3;
+            grid-row: 3;
+            justify-self: flex-end;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            align-items: flex-end;
+        }
+        .creator-project-link {
+            font-size: 2rem;
+            font-family: serif;
+            color: #FFFFFF;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            padding-bottom: 0.5rem;
+            transition: border-color 0.3s ease;
+        }
+        .creator-project-link:hover {
+            border-bottom-color: #FFFFFF;
+        }
+        .creator-url {
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .creator-url:hover {
+            color: #FFFFFF;
+        }
+
+        /* CW Style Contact & Footer */
+        .contact-section {
+            background: #0d1a0e;
+            padding: 15vh 6vw;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10vw;
+        }
+        .contact-title {
+            font-family: serif;
+            font-size: 4rem;
+            line-height: 1;
+            font-weight: 300;
+        }
+        .contact-subtitle {
+            font-family: serif;
+            font-size: 2.5rem;
+            line-height: 1.2;
+            font-weight: 300;
+            margin-bottom: 5rem;
+            color: rgba(255,255,255,0.9);
+        }
+        .contact-subtitle em {
+            font-style: italic;
+        }
+        .form-group {
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+        .form-label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 0.5rem;
+        }
+        .form-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding: 0.75rem 0;
+            color: #FFFFFF;
+            font-size: 1.1rem;
+            font-weight: 300;
+            transition: border-color 0.3s ease;
+        }
+        .form-input:focus {
+            outline: none;
+            border-bottom-color: #FFFFFF;
+        }
+        .submit-btn-wrap {
+            margin-top: 4rem;
+        }
+        .submit-btn {
+            font-family: serif;
+            font-size: 3.5rem;
+            color: #FFFFFF;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: opacity 0.3s ease;
+        }
+        .submit-btn:hover {
+            opacity: 0.7;
+        }
+        .submit-btn svg {
+            margin-left: 1rem;
+            width: 48px;
+            height: 48px;
+        }
+
+        /* Footer Redesign */
+        .main-footer {
+            background: #0d1a0e;
+            padding: 8vh 6vw;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .footer-top {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 4rem;
+            padding-bottom: 8vh;
+        }
+        .footer-brand-statement {
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.8);
+            font-weight: 300;
+            line-height: 1.6;
+            max-width: 300px;
+        }
+        .footer-contact-item {
+            margin-bottom: 1.5rem;
+        }
+        .footer-contact-item p {
+            font-size: 1.1rem;
+            color: #FFFFFF;
+            font-weight: 300;
+            margin-bottom: 0.25rem;
+        }
+        .footer-contact-item a {
+            color: #FFFFFF;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            padding-bottom: 2px;
+            transition: border-color 0.3s ease;
+        }
+        .footer-contact-item a:hover {
+            border-bottom-color: #FFFFFF;
+        }
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-top: 4vh;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .footer-copyright {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 0.05em;
+        }
+        .footer-links-small {
+            display: flex;
+            gap: 2rem;
+            font-size: 12px;
+        }
+        .footer-links-small a {
+            color: rgba(255,255,255,0.4);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .footer-links-small a:hover {
+            color: #FFFFFF;
+        }
+        .back-to-top {
+            color: #FFFFFF;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .back-to-top:hover {
+            transform: translateY(-5px);
+        }
+
+        @media (max-width: 1024px) {
+            .contact-grid { grid-template-columns: 1fr; gap: 4rem; }
+            .footer-top { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 768px) {
+            .footer-top { grid-template-columns: 1fr; }
+            .footer-bottom { flex-direction: column; align-items: flex-start; gap: 2rem; }
+            .back-to-top { align-self: flex-end; }
+        }
+
+        @media (max-width: 1024px) {
+            .creator-row { grid-template-columns: 80px 1fr; grid-template-rows: auto auto auto auto; }
+            .creator-title-main { grid-column: 2; font-size: 2.5rem; }
+            .creator-img-wrap { grid-column: 1 / span 2; grid-row: 2; width: 100%; }
+            .creator-info-block { grid-column: 1 / span 2; grid-row: 3; }
+            .creator-links-wrap { grid-column: 1 / span 2; grid-row: 4; justify-self: flex-start; align-items: flex-start; }
+        }
+        .jurska-section {
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            background: #131F16;
+            position: relative;
+        }
+
+        .jurska-bg-wrap {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background: #131F16;
+        }
+
+        .jurska-bg-item {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.2s cubic-bezier(0.23, 1, 0.32, 1), transform 8s linear;
+            filter: brightness(0.5) contrast(1.1);
+            transform: scale(1);
+        }
+
+        /* Default background */
+        .jurska-bg-item:first-child {
+            opacity: 1;
+        }
+
+        /* Global Hover switch & zoom logic */
+        .jurska-section:has(.jurska-col:nth-child(1):hover) .jurska-bg-item:nth-child(1) { opacity: 1; transform: scale(1.1); }
+        .jurska-section:has(.jurska-col:nth-child(1):hover) .jurska-bg-item:not(:nth-child(1)) { opacity: 0; }
+
+        .jurska-section:has(.jurska-col:nth-child(2):hover) .jurska-bg-item:nth-child(2) { opacity: 1; transform: scale(1.1); }
+        .jurska-section:has(.jurska-col:nth-child(2):hover) .jurska-bg-item:not(:nth-child(2)) { opacity: 0; }
+
+        .jurska-section:has(.jurska-col:nth-child(3):hover) .jurska-bg-item:nth-child(3) { opacity: 1; transform: scale(1.1); }
+        .jurska-section:has(.jurska-col:nth-child(3):hover) .jurska-bg-item:not(:nth-child(3)) { opacity: 0; }
+
+        .jurska-col {
+            position: relative;
+            flex: 1;
+            height: 100%;
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            cursor: pointer;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            z-index: 10;
+            background: transparent; /* Background is shared global underneath */
+        }
+
+        .jurska-col:last-child {
+            border-right: none;
+        }
+
+        .jurska-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(19, 31, 22, 0) 0%, rgba(19, 31, 22, 0.8) 100%);
+            background-color: rgba(19, 31, 22, 0.2); /* Base tint */
+            opacity: 0.6;
+            transition: all 1s ease;
+            z-index: 1;
+            backdrop-filter: blur(0);
+            -webkit-backdrop-filter: blur(0);
+        }
+
+        .jurska-col:hover .jurska-overlay {
+            opacity: 0.5;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        /* Dim other columns slightly but keep titles readable */
+        .jurska-section:hover .jurska-col:not(:hover) .jurska-content {
+            opacity: 0.7;
+        }
+
+        .jurska-section:hover .jurska-col:not(:hover) .jurska-overlay {
+            opacity: 0.8;
+        }
+
+        .jurska-content {
+            position: relative;
+            z-index: 20;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem;
+            text-align: center;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+        }
+
+        .jurska-title {
+            font-family: "Cormorant Infant", serif;
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            color: #FFFFFF;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            line-height: 1;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .jurska-subtitle {
+            font-family: "Noto Sans TC", sans-serif;
+            font-size: 0.75rem;
+            color: #C1A37D;
+            text-transform: uppercase;
+            letter-spacing: 0.4em;
+            margin-bottom: 2rem;
+            opacity: 0; /* Hide subtitle until hover for cleaner look */
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+        }
+
+        .jurska-col:hover .jurska-subtitle {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .jurska-desc-wrap {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .jurska-desc {
+            font-family: "Noto Sans TC", sans-serif;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 340px;
+            margin-top: 1.5rem;
+            line-height: 1.8;
+            font-weight: 300;
+        }
+
+        .jurska-btn {
+            margin-top: 2.5rem;
+            display: inline-flex;
+            align-items: center;
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(193, 163, 125, 0.5);
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 0.9rem 2.2rem;
+            border-radius: 999px;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .jurska-btn:hover {
+            background: #C1A37D;
+            color: #1F3023;
+            border-color: #C1A37D;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .jurska-col:hover .jurska-desc-wrap {
+            max-height: 500px;
+            opacity: 1;
+            margin-top: 1rem;
+        }
+
+        .jurska-col:hover .jurska-title {
+            color: #FFFFFF;
+            transform: translateY(-10px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .jurska-section {
+                flex-direction: column;
+                height: auto;
+                min-height: 150vh;
+            }
+            .jurska-col {
+                height: 50vh;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            }
+            .jurska-desc-wrap {
+                max-height: none;
+                opacity: 1;
+                margin-top: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased">
+    <!-- Premium Loader -->
+    <div id="loader">
+        <div id="loader-counter">0</div>
+    </div>
+
+    <!-- MAIN CONTENT WRAPPER (Hidden until loaded) -->
+    <div class="content-hidden">
+        <!-- NAVBAR -->
+        <nav id="navbar" class="fixed w-full z-[100] transition-[background,padding,box-shadow,backdrop-filter] duration-700 bg-transparent py-4 border-b border-white/10 hover:bg-primary/95 hover:backdrop-blur-md">
+        <div class="w-full px-6 md:px-12 flex justify-between items-center">
+            
+            <!-- Desktop Left Menu -->
+            <div class="hidden md:flex flex-1 items-center space-x-12 text-xs tracking-[0.2em] text-white/80 uppercase">
+                <a href="#location" class="hover:text-gold transition-colors block">Menu</a>
+                <a href="#location" class="hover:text-gold transition-colors block">Location</a>
+                <a href="#park" class="hover:text-gold transition-colors block">Central Park</a>
+            </div>
+
+            <!-- Centered Logo -->
+            <a href="#" class="flex-shrink-0 flex flex-col items-center justify-center pointer-events-auto z-50 md:py-2">
+                <img src="./sfh-img/PSR_Logo_Transparent.png"
+                    alt="SFH Parkside" class="h-10 md:h-14 object-contain" />
+            </a>
+            
+            <!-- Desktop Right Menu -->
+            <div class="hidden md:flex flex-1 justify-end items-center space-x-10 text-xs tracking-[0.2em] text-white/80 uppercase">
+                <a href="#amenities" class="hover:text-gold transition-colors">Amenities</a>
+                <a href="#residences" class="hover:text-gold transition-colors">Residences</a>
+                <a href="#location" class="border border-gold/50 px-6 py-3 rounded-[50px] hover:bg-gold hover:text-primary transition-all">Explore</a>
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <button id="mobile-menu-btn" class="md:hidden flex-1 flex justify-end text-gold pointer-events-auto z-50">
+                <i data-lucide="menu" class="w-7 h-7" id="menu-icon"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu"
+            class="md:hidden absolute top-full left-0 w-full bg-primary/95 backdrop-blur-xl transition-all duration-500 overflow-hidden max-h-0 py-0 border-t border-white/5">
+            <div class="flex flex-col items-center space-y-6 text-white/80 tracking-[0.2em] uppercase text-sm font-light">
+                <a href="#location" class="mobile-link">Location</a>
+                <a href="#park" class="mobile-link">Central Park</a>
+                <a href="#amenities" class="mobile-link">Amenities</a>
+                <a href="#residences" class="mobile-link">Residences</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section id="hero-section" class="relative h-screen flex flex-col justify-end overflow-hidden bg-[rgb(19,31,22)]">
+        <!-- Background Image area -->
+        <div id="hero-parallax" class="absolute top-0 left-0 w-full h-full z-0 will-change-transform scale-[1.05] origin-bottom invisible">
+            <img src="./sfh-img/Facade Tower_graded.jpg"
+                alt="Luxury Residence" class="w-full h-full object-cover hero-bg-anim" />
+            <div class="absolute inset-0 bg-primary/30 mix-blend-multiply"></div>
+            <!-- Gradient to blend into the text and next section smoothly -->
+            <div class="absolute bottom-0 left-0 w-full h-[50vh] bg-gradient-to-t from-[rgb(19,31,22)] via-[rgb(19,31,22)]/50 to-transparent"></div>
+        </div>
+
+        <!-- Giant Overlapping Typography -->
+        <div class="relative z-20 w-full px-6 md:px-12 pointer-events-none mb-[2vh] md:mb-[5vh] text-left flex justify-start">
+            <div class="reveal up" style="transition-delay: 200ms;">
+                <h1 class="font-serif text-[18vw] md:text-[14vw] leading-[0.85] text-white uppercase tracking-tighter drop-shadow-2xl flex flex-col items-start text-left">
+                    <span>SETIA</span>
+                    <span class="relative">
+                        <span>PARKSIDE</span>
+                        <!-- Script font overlapping -->
+                        <span class="absolute left-[35%] md:left-[45%] top-[10%] font-script text-gold text-[13vw] md:text-[9vw] capitalize tracking-normal -rotate-3 whitespace-nowrap" style="text-shadow: 2px 4px 20px rgba(0,0,0,0.8);">
+                            Residences
+                        </span>
+                    </span>
+                </h1>
+            </div>
+        </div>
+
+        <!-- Floating Interactive Pill -->
+        <div class="absolute right-6 md:right-12 bottom-[5vh] md:bottom-[8vh] bg-[#F4F1ED] rounded-[50px] p-2 pr-6 md:pr-8 flex items-center space-x-4 shadow-[0_20px_40px_rgba(0,0,0,0.6)] z-30 pointer-events-auto cursor-pointer group hover:bg-white transition-colors duration-500 reveal right" style="transition-delay: 600ms;">
+            <div class="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden">
+                <img src="./sfh-img/SFH_Parkside Residences_GF Main Lobby FA 13032025HR.jpg" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+            </div>
+            <a href="#location" class="flex flex-col border-none bg-transparent m-0 p-0 text-left">
+                <span class="text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70 mb-1">Luxury Residences</span>
+                <span class="text-xs md:text-sm font-serif text-primary">探索建案 &rarr;</span>
+            </a>
+        </div>
+
+        <!-- Bottom left small text -->
+        <div class="absolute left-6 md:left-12 bottom-4 md:bottom-6 text-white/50 text-xs md:text-sm uppercase tracking-[0.3em] font-light z-30 pointer-events-none reveal left" style="transition-delay: 800ms;">
+            <span class="hidden md:inline">吉隆坡新黃金三角核心 ‧ </span>五英畝中央公園首排
+        </div>
+    </section>
+
+    <!-- LOCATION SECTION -->
+    <section id="location" class="py-24 md:py-32 relative bg-[rgb(19,31,22)]">
+        <div class="max-w-7xl mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+            <div class="lg:pt-12">
+                <div class="reveal up">
+                    <div class="flex items-center space-x-4 mb-6">
+                        <div class="w-12 h-[1px] bg-gold"></div>
+                        <span class="text-gold tracking-[0.2em] uppercase text-sm">Location</span>
+                    </div>
+                    <h2 class="font-serif text-4xl md:text-5xl mb-8 leading-snug">
+                        絕佳地段 <br />吉隆坡新黃金三角核心
+                    </h2>
+                </div>
+                <div class="reveal up" style="transition-delay: 200ms;">
+                    <p class="text-white/70 font-light leading-relaxed mb-8 text-lg">
+                        Parkside Residences 坐落於 Jalan Bangsar 主幹道旁，隸屬未來發展最具潛力的「Setia Federal
+                        Hill」62層綜合開發計畫。完美連接城市的脈動與生活的從容。
+                    </p>
+                    <ul class="space-y-6" id="location-list">
+                        <li class="flex items-start space-x-4 cursor-pointer group loc-item transition-all duration-300" data-target="pin-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0 mt-2"></div>
+                            <span class="text-white/80 font-light text-md group-hover:text-gold transition-colors duration-300">鄰近 KL Sentral 交通樞紐</span>
+                        </li>
+                        <li class="flex items-start space-x-4 cursor-pointer group loc-item transition-all duration-300" data-target="pin-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0 mt-2"></div>
+                            <span class="text-white/80 font-light text-md group-hover:text-gold transition-colors duration-300">步行即達 Bangsar LRT 站（設有遮蔽人行道）</span>
+                        </li>
+                        <li class="flex items-start space-x-4 cursor-pointer group loc-item transition-all duration-300" data-target="pin-3">
+                            <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0 mt-2"></div>
+                            <span class="text-white/80 font-light text-md group-hover:text-gold transition-colors duration-300">周邊環繞 KLCC、TRX、Mid Valley、Bangsar 購物與餐飲聚落</span>
+                        </li>
+                        <li class="flex items-start space-x-4 cursor-pointer group loc-item transition-all duration-300" data-target="pin-4">
+                            <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0 mt-2"></div>
+                            <span class="text-white/80 font-light text-md group-hover:text-gold transition-colors duration-300">位處新黃金三角：Bangsar × Damansara Heights × KL Sentral × Mid Valley City</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="reveal left relative h-[600px] w-full group overflow-hidden mt-12 lg:mt-48" style="transition-delay: 300ms;" id="location-map-container">
+                <img id="map-image" src="./sfh-img/Masterplan (Jalan Bangsar)_CMYK.jpg"
+                    alt="Kuala Lumpur Cityscape"
+                    class="w-full h-full object-cover scale-[1.15] transform transition-transform duration-[800ms] ease-out will-change-transform origin-center" />
+                
+                <!-- Map Pins Overlay -->
+                <div class="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+                    <div class="absolute inset-0 bg-[#1A1F1B]/10 transition-colors duration-500" id="map-overlay-dimmer"></div>
+                    
+                    <!-- Pins -->
+                    <div id="pin-1" class="map-pin absolute top-[25%] left-[65%] w-3 h-3 bg-white/40 opacity-60 rounded-full transition-all duration-500 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center">
+                        <div class="absolute inset-0 rounded-full animate-ping bg-gold opacity-0 glow-ring transition-opacity duration-300"></div>
+                    </div>
+                    <div id="pin-2" class="map-pin absolute top-[50%] left-[45%] w-3 h-3 bg-white/40 opacity-60 rounded-full transition-all duration-500 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center">
+                        <div class="absolute inset-0 rounded-full animate-ping bg-gold opacity-0 glow-ring transition-opacity duration-300"></div>
+                    </div>
+                    <div id="pin-3" class="map-pin absolute top-[40%] left-[80%] w-3 h-3 bg-white/40 opacity-60 rounded-full transition-all duration-500 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center">
+                        <div class="absolute inset-0 rounded-full animate-ping bg-gold opacity-0 glow-ring transition-opacity duration-300"></div>
+                    </div>
+                    <div id="pin-4" class="map-pin absolute top-[65%] left-[30%] w-3 h-3 bg-white/40 opacity-60 rounded-full transition-all duration-500 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center">
+                        <div class="absolute inset-0 rounded-full animate-ping bg-gold opacity-0 glow-ring transition-opacity duration-300"></div>
+                    </div>
+                </div>
+
+                <div
+                    class="absolute -bottom-10 -left-10 w-48 h-48 bg-secondary rounded-full mix-blend-screen opacity-50 blur-3xl pointer-events-none">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CENTRAL PARK SECTION -->
+    <section id="park" class="relative h-screen flex flex-col justify-center overflow-hidden">
+        
+        <!-- Background Layers for Sliding Transition -->
+        <div id="park-bg-under" class="absolute inset-0 bg-cover bg-center z-0 will-change-transform" style="background-image: url('./sfh-img/sfh_bg.jpg');"></div>
+        <div id="park-bg-over" class="absolute inset-0 bg-cover bg-center z-0 will-change-[clip-path]" style="clip-path: inset(100% 0 0 0);"></div>
+        
+        <!-- Overlay -->
+        <div class="absolute inset-0 bg-black/60 z-10 pointer-events-none"></div>
+        
+        <!-- Subtle gradient overlay at bottom to blend with the bottom bar -->
+        <div class="absolute bottom-0 left-0 w-full h-[30vh] bg-gradient-to-t from-primary/90 to-transparent z-10 pointer-events-none"></div>
+
+        <!-- Main Content Plane -->
+        <div class="relative z-20 w-full max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between h-full pt-20 pb-32">
+            
+            <!-- Left aligned giant typography -->
+            <div class="reveal up" style="transition-delay: 200ms;">
+                <h2 id="park-main-title" class="font-serif text-[12vw] md:text-[7vw] leading-[0.85] text-white uppercase tracking-tighter drop-shadow-2xl flex flex-col items-start translate-y-[-10vh]">
+                    <span id="park-title-1">CENTRAL</span>
+                    <span id="park-title-2">PARK</span>
+                </h2>
+            </div>
+            
+            <!-- Right aligned text block -->
+            <div class="hidden md:block max-w-[400px] text-left mt-[10vh] reveal right" style="transition-delay: 500ms;">
+                <div class="flex items-center space-x-4 mb-3">
+                    <div class="w-12 h-[1px] bg-gold"></div>
+                    <p id="park-subtitle" class="text-[12px] uppercase tracking-[0.2em] font-bold text-gold">5 Acres of Greenery</p>
+                </div>
+                <p id="park-desc" class="text-white/80 font-light leading-relaxed text-base">
+                    五英畝中央公園第一排，繁華中的靜謐綠洲。<br><br>
+                    建築面向佔地五英畝的中央綠地，是整體規劃的社區核心。居住於此，即擁有無價的城市綠景視野，讓生活即自然、自然即日常。
+                </p>
+            </div>
+        </div>
+
+        <!-- Solid Bottom Bar -->
+        <div class="absolute bottom-0 left-0 w-full h-[12vh] bg-[rgb(19,31,22)] z-20"></div>
+
+        <!-- Overlapping large circle (Left) -->
+        <div class="absolute bottom-[1vh] left-[5%] md:left-[15%] w-40 h-40 md:w-56 md:h-56 bg-[#F4F1ED] rounded-full z-30 flex flex-col justify-center items-center reveal up" style="transition-delay: 300ms;">
+            <span id="park-stat-num" class="font-serif text-6xl md:text-8xl text-gold leading-none mb-1 md:mb-2">0</span>
+            <span id="park-stat-unit" class="text-[9px] md:text-xs tracking-[0.3em] text-[#131F16] font-bold uppercase">Min Walk</span>
+        </div>
+
+        <div class="absolute bottom-[3vh] md:bottom-[4vh] right-[5%] md:right-[15%] flex space-x-4 md:space-x-8 z-50 reveal left" style="transition-delay: 600ms;">
+            <!-- Circle 0 (Park) -->
+            <div class="park-thumb w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden shadow-xl cursor-pointer transition-all duration-300 active" 
+                data-bg="./sfh-img/sfh_bg.jpg"
+                data-t1="CENTRAL" data-t2="PARK" data-sub="5 Acres of Greenery" data-desc="五英畝中央公園第一排，繁華中的靜謐綠洲。建築面向佔地五英畝的中央綠地，是整體規劃的社區核心。"
+                data-stat="0" data-unit="Min Walk">
+                <img src="./sfh-img/sfh_bg.jpg" class="w-full h-full object-cover" />
+            </div>
+            <!-- Circle 1 (Lobby) -->
+            <div class="park-thumb w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden shadow-xl cursor-pointer transition-all duration-300" 
+                data-bg="./sfh-img/SFH_Parkside Residences_GF Main Lobby FA 13032025HR.jpg"
+                data-t1="GRAND" data-t2="LOBBY" data-sub="Timeless Elegance" data-desc="尊榮大廳規劃，迎接歸家的每一刻。精湛工藝與現代美學交織，營造如星級飯店般的奢華氛圍。"
+                data-stat="24" data-unit="Hour Concierge">
+                <img src="./sfh-img/SFH_Parkside Residences_GF Main Lobby FA 13032025HR.jpg" class="w-full h-full object-cover" />
+            </div>
+            <!-- Circle 2 (DropOff) -->
+            <div class="park-thumb w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden shadow-xl cursor-pointer transition-all duration-300" 
+                data-bg="./sfh-img/SFH_Parkside Residences_GF DropOff FA 11032025HR.jpg"
+                data-t1="URBAN" data-t2="RETREAT" data-sub="Arrival Experience" data-desc="五星級落客區設計，為繁忙城市中的生活增添一份從容與尊貴。專屬禮賓車道，體現不凡氣度。"
+                data-stat="5" data-unit="Star Experience">
+                <img src="./sfh-img/SFH_Parkside Residences_GF DropOff FA 11032025HR.jpg" class="w-full h-full object-cover" />
+            </div>
+            <!-- Circle 3 (Retail) -->
+            <div class="park-thumb w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden shadow-xl cursor-pointer transition-all duration-300 hidden md:block" 
+                data-bg="./sfh-img/SFH_Parkside Residences_GF Retail FA 28022025HR.jpg"
+                data-t1="VIBRANT" data-t2="RETAIL" data-sub="Convenience at Doorstep" data-desc="步行擁抱全方位生活機能，精品商店與質感咖啡廳進駐社區下方，商圈聚落就在家門口。"
+                data-stat="10" data-unit="Steps Away">
+                <img src="./sfh-img/SFH_Parkside Residences_GF Retail FA 28022025HR.jpg" class="w-full h-full object-cover" />
+            </div>
+        </div>
+    </section>
+
+    <!-- AMENITIES SECTION -->
+    <section id="amenities" class="py-24 md:py-32 bg-[rgb(19,31,22)]">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-12">
+            <div class="reveal up text-center mb-20">
+                <div class="flex items-center justify-center space-x-4 mb-4">
+                    <div class="w-12 h-[1px] bg-gold"></div>
+                    <span class="text-gold tracking-[0.2em] uppercase text-sm">Exclusive Amenities</span>
+                    <div class="w-12 h-[1px] bg-gold"></div>
+                </div>
+                <h2 class="font-serif text-4xl md:text-5xl">三層空中休閒設施．全齡化生活體驗</h2>
+                <p class="text-white/60 font-light mt-6 max-w-2xl mx-auto">Parkside
+                    提供從家庭、健身、社交到寧靜冥想等多元生活場景，精心規劃每一處細節，致敬極致生活。</p>
+            </div>
+
+            <div class="space-y-32">
+                <!-- Level 8 -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+                    <div class="lg:col-span-4 reveal up order-2 lg:order-1 relative parallax-content">
+                        <div class="absolute -top-10 -left-10 text-9xl font-serif text-gold/10 z-0 parallax-number">08</div>
+                        <div class="relative z-10 pr-0 lg:pr-12">
+                            <h3 class="font-serif text-3xl mb-4 text-gold">Level 8 <br /><span
+                                    class="text-white text-4xl font-serif">Parkside Retreat</span></h3>
+                            <p class="text-white/70 font-light leading-relaxed mb-6">沉浸於無邊際的蔚藍之中，為家庭與社交打造的專屬綠洲。</p>
+                            <ul class="grid grid-cols-2 gap-4">
+                                <li class="flex items-center space-x-3 text-white/80 font-light">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0"></div>
+                                    <span>無邊際泳池</span>
+                                </li>
+                                <li class="flex items-center space-x-3 text-white/80 font-light">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0"></div>
+                                    <span>兒童遊樂場</span>
+                                </li>
+                                <li class="flex items-center space-x-3 text-white/80 font-light">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0"></div>
+                                    <span>BBQ 區</span>
+                                </li>
+                                <li class="flex items-center space-x-3 text-white/80 font-light">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0"></div>
+                                    <span>寵物草坪</span>
+                                </li>
+                                <li class="flex items-center space-x-3 text-white/80 font-light">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0"></div>
+                                    <span>回教祈禱室</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-8 reveal right order-1 lg:order-2 h-[600px]">
+                        <div class="swiper amenities-slider w-full h-full">
+                            <div class="swiper-wrapper">
+                                <div class="swiper-slide">
+                                    <img src="./sfh-img/SFH_Parkside Residences_L8 infinity_pool FA 10032025HR.jpg"
+                                        alt="Pool" class="w-full h-full object-cover" />
+                                </div>
+                                <div class="swiper-slide">
+                                    <img src="./sfh-img/SFH_Parkside Residences_L8 infinity_pool closeup FA 10032025HR.jpg"
+                                        alt="Pool Closeup" class="w-full h-full object-cover" />
+                                </div>
+                                <div class="swiper-slide">
+                                    <img src="./sfh-img/SFH_Parkside Residences_L8 kids_pool FA 02112024HR.jpg"
+                                        alt="Kids Pool" class="w-full h-full object-cover" />
+                                </div>
+                            </div>
+                            <div class="swiper-pagination"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level 43 -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+                    <div class="lg:col-span-8 reveal left h-[600px]">
+                        <div class="swiper amenities-slider w-full h-full">
+                            <div class="swiper-wrapper">
+                                <div class="swiper-slide">
+                                    <img src="./sfh-img/hammock_Garden_graded.jpg"
+                                        alt="Meditation" class="w-full h-full object-cover" />
+                                </div>
+                                <div class="swiper-slide">
+                                    <img src="./sfh-img/SFH_Parkside Residences_L43 Co-working space FA 07032025HR.jpg"
+                                        alt="Co-working" class="w-full h-full object-cover" />
+                                </div>
+                                <div class="swiper-slide">
+                                    <img src="./sfh-img/SFH_Parkside Residences_L43 Games Room FA13032025HR.jpg"
+                                        alt="Games Room" class="w-full h-full object-cover" />
+                                </div>
+                            </div>
+                            <div class="swiper-pagination"></div>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-4 reveal up relative pl-0 lg:pl-12 parallax-content">
+                        <div class="absolute -top-10 right-0 lg:left-0 text-9xl font-serif text-gold/10 z-0 parallax-number">43</div>
+                        <div class="relative z-10">
+                            <h3 class="font-serif text-3xl mb-4 text-gold">Level 43 <br /><span
+                                    class="text-white text-4xl font-serif">Parkside Collective</span></h3>
+                            <p class="text-white/70 font-light leading-relaxed mb-6">身心靈的平衡之境，融合工作與休憩的現代化共享空間。</p>
+                            <ul class="grid grid-cols-2 gap-4">
+                                <li class="flex items-center space-x-3 text-white/80 font-light">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0"></div>
+                                    <span>瑜珈與冥指區</span>
+                                </li>
+                                <li class="flex items-center space-x-3 text-white/80 font-light">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0"></div>
+                                    <span>吊床花園</span>
+                                </li>
+                                <li class="flex items-center space-x-3 text-white/80 font-light">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0"></div>
+                                    <span>交誼花園</span>
+                                </li>
+                                <li class="flex items-center space-x-3 text-white/80 font-light">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0"></div>
+                                    <span>Co-working 空間</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level 61 -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+                    <div class="lg:col-span-4 reveal up order-2 lg:order-1 relative parallax-content">
+                        <div class="absolute -top-10 -left-10 text-9xl font-serif text-gold/10 z-0 parallax-number">61</div>
+                        <div class="relative z-10 pr-0 lg:pr-12">
+                            <h3 class="font-serif text-3xl mb-4 text-gold">Level 61 <br /><span
+                                    class="text-white text-4xl font-serif">Parkside Sky</span></h3>
+                            <p class="text-white/70 font-light leading-relaxed mb-6">凌駕於城市之巔，盡攬吉隆坡天際線的奢華觀景體驗。</p>
+                            <ul class="grid grid-cols-1 gap-4">
+                                <li class="flex items-center space-x-3 text-white/80 font-light">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0"></div>
+                                    <span>Sky Lounge 天際酒廊</span>
+                                </li>
+                                <li class="flex items-center space-x-3 text-white/80 font-light">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0"></div>
+                                    <span>Sky Gym 雲端健身房</span>
+                                </li>
+                                <li class="flex items-center space-x-3 text-white/80 font-light">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0"></div>
+                                    <span>屋頂觀景台 (遠眺 KL 城市全景)</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-8 reveal right order-1 lg:order-2 h-[600px]">
+                        <div class="swiper amenities-slider w-full h-full">
+                            <div class="swiper-wrapper">
+                                <div class="swiper-slide">
+                                    <img src="./sfh-img/SFH_Parkside Residences_L61 Sky Lounge FA 12032025HR.jpg"
+                                        alt="Skyline" class="w-full h-full object-cover" />
+                                </div>
+                                <div class="swiper-slide">
+                                    <img src="./sfh-img/SFH_Parkside Residences_L61 Sky Gym FA 17032025HR.jpg"
+                                        alt="Sky Gym" class="w-full h-full object-cover" />
+                                </div>
+                                <div class="swiper-slide">
+                                    <img src="./sfh-img/SFH_Parkside Residences_L61 Sky Lounge Crown FA 28022025HR.jpg"
+                                        alt="Sky Lounge Crown" class="w-full h-full object-cover" />
+                                </div>
+                            </div>
+                            <div class="swiper-pagination"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- INTERACTIVE SPLIT SECTION (Jurska Style - Shared Background with Local Blur) -->
+    <section id="residences" class="jurska-section border-t border-gold/10">
+        <!-- Architecture -->
+        <div class="jurska-col reveal up">
+            <div class="jurska-overlay"></div>
+            <div class="jurska-content">
+                <div class="jurska-subtitle">Architecture</div>
+                <h3 class="jurska-title">建築<br />美學</h3>
+                <div class="jurska-desc-wrap">
+                    <p class="jurska-desc">693 戶優質格局，多數單位皆享雙景面向：Bangsar 綠意與 KL 城市天際線。每層僅 14 戶搭配 8 部高速電梯，保障隱私與效率。</p>
+                    <div class="jurska-btn">Explore Design &rarr;</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fittings -->
+        <div class="jurska-col reveal up" style="transition-delay: 200ms;">
+            <div class="jurska-overlay"></div>
+            <div class="jurska-content">
+                <div class="jurska-subtitle">Interior</div>
+                <h3 class="jurska-title">卓越<br />品質</h3>
+                <div class="jurska-desc-wrap">
+                    <p class="jurska-desc">高端廚房設備標配，衛浴採用德國 Villeroy & Boch 與 American Standard。結合智能門鎖與自然採光設計，致敬極致生活。</p>
+                    <div class="jurska-btn">View Fittings &rarr;</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sustainability -->
+        <div class="jurska-col reveal up" style="transition-delay: 400ms;">
+            <div class="jurska-overlay"></div>
+            <div class="jurska-content">
+                <div class="jurska-subtitle">Sustainability</div>
+                <h3 class="jurska-title">永續<br />生活</h3>
+                <div class="jurska-desc-wrap">
+                    <p class="jurska-desc">榮獲 GreenRE 金級預認證。結合雨水回收、太陽能發電與電動車充電站，將生態理念與城市共融，落實於建築細節。</p>
+                    <div class="jurska-btn">Green Living &rarr;</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shared Global Background Items (Moved to end for correct indexing) -->
+        <div class="jurska-bg-wrap">
+            <div class="jurska-bg-item" style="background-image: url('./sfh-img/Facade Tower_graded.jpg');"></div>
+            <div class="jurska-bg-item" style="background-image: url('./sfh-img/SFH_Parkside Residences_GF Main Lobby FA 13032025HR.jpg');"></div>
+            <div class="jurska-bg-item" style="background-image: url('./sfh-img/sfh_bg.jpg');"></div>
+        </div>
+    </section>
+
+    <!-- DEVELOPERS SECTION -->
+    <div id="creators-pin-wrapper">
+        <section id="developers-section" class="relative overflow-hidden">
+            <!-- Stacking List Container -->
+            <div class="creators-list">
+                <!-- Row 01 -->
+                <div class="creator-row">
+                    <div class="creator-index">01</div>
+                    <h2 class="creator-title-main">SP Setia Berhad</h2>
+                    
+                    <div class="creator-img-wrap">
+                        <img src="./sfh-img/Facade Tower_graded.jpg" alt="SP Setia">
+                    </div>
+
+                    <div class="creator-info-block">
+                        <div class="creator-info-label">Info</div>
+                        <div class="creator-description">
+                            馬來西亞最具代表性的地產開發商之一，自 1974 年起深耕房地產業，榮獲 17 次 FIABCI 世界不動產卓越獎，專案遍及馬來西亞、英國、澳洲、新加坡等全球市場。
+                        </div>
+                    </div>
+
+                    <div class="creator-links-wrap">
+                        <a href="#" class="creator-project-link">See All Projects &rarr;</a>
+                        <a href="https://www.spsetia.com" target="_blank" class="creator-url">spsetia.com</a>
+                    </div>
+                </div>
+
+                <!-- Row 02 -->
+                <div class="creator-row">
+                    <div class="creator-index">02</div>
+                    <h2 class="creator-title-main">Mitsui Fudosan</h2>
+                    
+                    <div class="creator-img-wrap">
+                        <img src="./sfh-img/SFH_Parkside Residences_GF Main Lobby FA 13032025HR.jpg" alt="Mitsui Fudosan">
+                    </div>
+
+                    <div class="creator-info-block">
+                        <div class="creator-info-label">Info</div>
+                        <div class="creator-description">
+                            來自日本，歷史可追溯至 1673 年。為日本最大地產集團。以傳承百年的職人精神與前瞻性的都市規劃聞名於世。
+                        </div>
+                    </div>
+
+                    <div class="creator-links-wrap">
+                        <a href="#" class="creator-project-link">See All Projects &rarr;</a>
+                        <a href="https://www.mitsuifudosan.co.jp" target="_blank" class="creator-url">mitsuifudosan.co.jp</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- CONTACT SECTION -->
+    <section id="contact" class="contact-section">
+        <div class="contact-grid">
+            <div class="reveal up">
+                <h2 class="contact-title">Stay in <br />Touch</h2>
+            </div>
+            <div class="reveal up" style="transition-delay: 200ms;">
+                <h3 class="contact-subtitle">
+                    <em>Join our email list</em> and stay connected with Setia Federal Hill
+                </h3>
+                
+                <form class="contact-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                        <div class="form-group">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-input" placeholder="Your first name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-input" placeholder="Your last name">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-input" placeholder="email@domain.com">
+                    </div>
+                    
+                    <div class="submit-btn-wrap">
+                        <a href="#" class="submit-btn">
+                            Submit <i data-lucide="arrow-up-right"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN FOOTER -->
+    <footer class="main-footer">
+        <div class="footer-top">
+            <div class="reveal up">
+                <p class="footer-brand-statement">
+                    We Build Community. <br />
+                    Sophisticated urban living nestled in the heart of Kuala Lumpur.
+                </p>
+            </div>
+            <div class="reveal up" style="transition-delay: 100ms;">
+                <div class="footer-contact-item">
+                    <p>+603 2287 5522</p>
+                    <a href="mailto:sales@spsetia.com">sales@spsetia.com</a>
+                </div>
+                <div class="footer-contact-item">
+                    <p>Setia International Centre</p>
+                    <p>KL Eco City, Kuala Lumpur</p>
+                </div>
+            </div>
+            <div class="reveal up" style="transition-delay: 200ms;">
+                <!-- Social or additional links can go here -->
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <div class="footer-copyright">
+                &copy; <span id="year"></span> Setia Federal Hill. All rights reserved.
+            </div>
+            <div class="footer-links-small">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Use</a>
+            </div>
+            <div class="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+                <i data-lucide="arrow-up"></i>
+            </div>
+        </div>
+    </footer>
+
+    </div> <!-- End .content-hidden -->
+
+    <!-- Custom Slider Cursor -->
+    <div id="slider-cursor" class="slider-cursor">
+        <div class="cursor-left"><i data-lucide="chevron-left"></i></div>
+        <div class="cursor-right"><i data-lucide="chevron-right"></i></div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // Register GSAP Plugins
+        gsap.registerPlugin(ScrollTrigger);
+
+        // --- DOM CACHE ---
+        // Storing frequently used elements to avoid expensive lookups during interactions
+        const el = {
+            loader: document.getElementById('loader'),
+            loaderCounter: document.getElementById('loader-counter'),
+            body: document.body,
+            navbar: document.getElementById('navbar'),
+            mobileMenu: document.getElementById('mobile-menu'),
+            menuIcon: document.getElementById('menu-icon'),
+            sliderCursor: document.getElementById('slider-cursor'),
+            mapOverlayDimmer: document.getElementById('map-overlay-dimmer'),
+            mapPins: document.querySelectorAll('.map-pin'),
+            revealElements: document.querySelectorAll('.reveal'),
+            yearText: document.getElementById('year')
+        };
+
+        // Initialize Icons
+        lucide.createIcons();
+        if (el.yearText) el.yearText.textContent = new Date().getFullYear();
+
+        // --- LOADING & TRANSITION LOGIC ---
+        function startLoadingSequence() {
+            const mainTimeline = gsap.timeline();
+            let countObj = { val: 0 };
+
+            mainTimeline.to(countObj, {
+                val: 100,
+                duration: 2.8,
+                delay: 0.2,
+                ease: "power2.inOut",
+                onUpdate: () => {
+                    el.loaderCounter.textContent = Math.floor(countObj.val);
+                },
+                onComplete: () => {
+                    gsap.to(el.loader, {
+                        yPercent: -100,
+                        duration: 1.5,
+                        ease: "expo.inOut",
+                        onStart: () => el.body.classList.add('loaded'),
+                        onComplete: () => {
+                            el.loader.style.display = 'none';
+                            initLenis();
+                        }
+                    });
+                }
+            });
+        }
+
+        document.fonts.ready.then(startLoadingSequence);
+
+        // --- LENIS SMOOTH SCROLL ---
+        function initLenis() {
+            const lenis = new Lenis({
+                duration: 1.2,
+                easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+                smoothWheel: true
+            });
+
+            lenis.on('scroll', ScrollTrigger.update);
+            gsap.ticker.add((time) => {
+                lenis.raf(time * 1000);
+            });
+            gsap.ticker.lagSmoothing(0);
+            ScrollTrigger.refresh();
+        }
+
+        // --- NAVBAR PERFORMANCE OPTIMIZATION ---
+        // Using ScrollTrigger instead of a raw window scroll listener for better performance
+        ScrollTrigger.create({
+            start: "top -50",
+            onUpdate: (self) => {
+                if (self.direction === 1) { // Scrolling down
+                    el.navbar.classList.remove('bg-transparent', 'py-6');
+                    el.navbar.classList.add('bg-primary/95', 'backdrop-blur-md', 'py-4', 'shadow-2xl');
+                } else if (self.scroll() < 50) { // Near top
+                    el.navbar.classList.add('bg-transparent', 'py-6');
+                    el.navbar.classList.remove('bg-primary/95', 'backdrop-blur-md', 'py-4', 'shadow-2xl');
+                }
+            }
+        });
+
+        // --- MOBILE MENU ---
+        let isMenuOpen = false;
+        const toggleMenu = () => {
+            isMenuOpen = !isMenuOpen;
+            if (isMenuOpen) {
+                el.mobileMenu.classList.replace('max-h-0', 'max-h-screen');
+                el.mobileMenu.classList.add('py-6');
+                el.menuIcon.setAttribute('data-lucide', 'x');
+            } else {
+                el.mobileMenu.classList.replace('max-h-screen', 'max-h-0');
+                el.mobileMenu.classList.remove('py-6');
+                el.menuIcon.setAttribute('data-lucide', 'menu');
+            }
+            lucide.createIcons();
+        };
+
+        document.getElementById('mobile-menu-btn')?.addEventListener('click', toggleMenu);
+        document.querySelectorAll('.mobile-link').forEach(link => {
+            link.addEventListener('click', () => { if (isMenuOpen) toggleMenu(); });
+        });
+
+        // --- SCROLL REVEAL (INTERSECTION OBSERVER) ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+
+        el.revealElements.forEach(elem => observer.observe(elem));
+
+        // --- HERO PARALLAX ---
+        const heroParallax = document.getElementById('hero-parallax');
+        if (heroParallax) {
+            gsap.to(heroParallax, {
+                y: '30vh',
+                ease: "none",
+                scrollTrigger: {
+                    trigger: "#hero-section",
+                    start: "top top",
+                    end: "bottom top",
+                    scrub: true
+                }
+            });
+        }
+
+        // --- MAP INTERACTION OPTIMIZATION ---
+        const locList = document.getElementById('location-list');
+        if (locList) {
+            locList.addEventListener('mouseleave', () => {
+                el.mapOverlayDimmer.classList.replace('bg-[#1A1F1B]/60', 'bg-[#1A1F1B]/10');
+                el.mapPins.forEach(pin => {
+                    pin.classList.remove('scale-[2.5]', 'bg-gold', 'opacity-100', 'shadow-[0_0_20px_rgba(193,163,125,0.8)]', 'z-20');
+                    pin.classList.add('bg-white/40', 'opacity-60');
+                    pin.querySelector('.glow-ring')?.classList.replace('opacity-70', 'opacity-0');
+                });
+            });
+
+            document.querySelectorAll('.loc-item').forEach(item => {
+                item.addEventListener('mouseenter', () => {
+                    const targetId = item.getAttribute('data-target');
+                    el.mapOverlayDimmer.classList.replace('bg-[#1A1F1B]/10', 'bg-[#1A1F1B]/60');
+                    el.mapPins.forEach(pin => {
+                        const isMatch = pin.id === targetId;
+                        pin.classList.toggle('scale-[2.5]', isMatch);
+                        pin.classList.toggle('bg-gold', isMatch);
+                        pin.classList.toggle('opacity-100', isMatch);
+                        pin.classList.toggle('shadow-[0_0_20px_rgba(193,163,125,0.8)]', isMatch);
+                        pin.classList.toggle('z-20', isMatch);
+                        pin.classList.toggle('bg-white/40', !isMatch);
+                        pin.classList.toggle('opacity-60', !isMatch);
+                        const ring = pin.querySelector('.glow-ring');
+                        if (ring) ring.classList.replace(isMatch ? 'opacity-0' : 'opacity-70', isMatch ? 'opacity-70' : 'opacity-0');
+                    });
+                });
+            });
+        }
+
+        // --- MAP ZOOM ---
+        const mapImage = document.getElementById('map-image');
+        if (mapImage) {
+            gsap.fromTo(mapImage, { scale: 1.15 }, {
+                scale: 1,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: "#location",
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: true
+                }
+            });
+        }
+
+        // --- PARK GALLERY OPTIMIZATION ---
+        const parkBgUnder = document.getElementById('park-bg-under');
+        const parkBgOver = document.getElementById('park-bg-over');
+        const pT1 = document.getElementById('park-title-1'), pT2 = document.getElementById('park-title-2');
+        const pSub = document.getElementById('park-subtitle'), pDesc = document.getElementById('park-desc');
+        const pStatNum = document.getElementById('park-stat-num'), pStatUnit = document.getElementById('park-stat-unit');
+        
+        document.querySelectorAll('.park-thumb').forEach(thumb => {
+            thumb.addEventListener('click', () => {
+                const data = thumb.dataset;
+                if (!data.bg) return;
+
+                parkBgOver.style.backgroundImage = `url("${data.bg}")`;
+                parkBgOver.style.zIndex = '5';
+                
+                gsap.killTweensOf(parkBgOver);
+                gsap.fromTo(parkBgOver, { clipPath: 'inset(100% 0 0 0)' }, { 
+                    clipPath: 'inset(0% 0 0 0)', 
+                    duration: 1.0, 
+                    ease: 'power4.inOut',
+                    onComplete: () => {
+                        parkBgUnder.style.backgroundImage = `url("${data.bg}")`;
+                        gsap.set(parkBgOver, { clipPath: 'inset(100% 0 0 0)', zIndex: '0' });
+                    }
+                });
+                
+                const txt = [pT1, pT2, pSub, pDesc, pStatNum, pStatUnit];
+                gsap.to(txt, {
+                    opacity: 0, y: -15, duration: 0.3, stagger: 0.02,
+                    onComplete: () => {
+                        if(pT1) pT1.innerText = data.t1 || "";
+                        if(pT2) pT2.innerText = data.t2 || "";
+                        if(pSub) pSub.innerText = data.sub || "";
+                        if(pDesc) pDesc.innerText = data.desc || "";
+                        if(pStatNum) pStatNum.innerText = data.stat || "";
+                        if(pStatUnit) pStatUnit.innerText = data.unit || "";
+                        gsap.to(txt, { opacity: 1, y: 0, duration: 0.5, stagger: 0.03, ease: 'power2.out' });
+                    }
+                });
+                
+                document.querySelectorAll('.park-thumb').forEach(t => t.classList.toggle('border-gold', t === thumb));
+            });
+        });
+
+        // --- AMENITIES SLIDER & CUSTOM CURSOR PERFORMANCE ---
+        // Using quickSetter for extremely performant cursor following
+        const xSetter = gsap.quickSetter(el.sliderCursor, "x", "px");
+        const ySetter = gsap.quickSetter(el.sliderCursor, "y", "px");
+
+        document.querySelectorAll('.amenities-slider').forEach(sliderEl => {
+            const swiper = new Swiper(sliderEl, {
+                loop: true,
+                speed: 800,
+                autoplay: false,
+                effect: 'fade',
+                fadeEffect: { crossFade: true },
+                preventInteractionOnTransition: false,
+                pagination: { el: sliderEl.querySelector('.swiper-pagination'), clickable: true },
+            });
+
+            sliderEl.addEventListener('mousemove', (e) => {
+                xSetter(e.clientX);
+                ySetter(e.clientY);
+                
+                const rect = sliderEl.getBoundingClientRect();
+                const isLeft = e.clientX < rect.left + rect.width / 2;
+                el.sliderCursor.classList.toggle('left', isLeft);
+                el.sliderCursor.classList.toggle('right', !isLeft);
+            });
+
+            sliderEl.addEventListener('mouseenter', () => {
+                el.sliderCursor.classList.add('active');
+                lucide.createIcons();
+            });
+
+            sliderEl.addEventListener('mouseleave', () => {
+                el.sliderCursor.classList.remove('active', 'left', 'right');
+            });
+
+            sliderEl.addEventListener('click', (e) => {
+                if (e.target.closest('.swiper-pagination')) return;
+                const rect = sliderEl.getBoundingClientRect();
+                e.clientX < rect.left + rect.width / 2 ? swiper.slidePrev() : swiper.slideNext();
+            });
+
+            // Enhanced Parallax for this Instance
+            const row = sliderEl.closest('.grid');
+            const images = sliderEl.querySelectorAll('.swiper-slide img');
+            
+            images.forEach(img => {
+                gsap.fromTo(img, { yPercent: -15 }, {
+                    yPercent: 15, ease: "none",
+                    scrollTrigger: { trigger: sliderEl, start: "top bottom", end: "bottom top", scrub: true }
+                });
+            });
+
+            if (row) {
+                const bgNum = row.querySelector('.parallax-number');
+                const content = row.querySelector('.parallax-content');
+                if (bgNum) {
+                    gsap.fromTo(bgNum, { y: -50 }, {
+                        y: 50, ease: "none",
+                        scrollTrigger: { trigger: row, start: "top bottom", end: "bottom top", scrub: true }
+                    });
+                }
+                if (content) {
+                    gsap.fromTo(content, { y: 30 }, {
+                        y: -30, ease: "none",
+                        scrollTrigger: { trigger: row, start: "top bottom", end: "bottom top", scrub: true }
+                    });
+                }
+            }
+        });
+
+        // --- STICKY STACKING CREATORS LOGIC ---
+        const creatorRows = document.querySelectorAll('.creator-row');
+        if (creatorRows.length > 0) {
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: "#creators-pin-wrapper",
+                    start: "top top",
+                    end: "+=300%", // Longer pin for stacking
+                    pin: "#developers-section",
+                    scrub: 1,
+                    anticipatePin: 1
+                }
+            });
+
+            // Stack them up
+            creatorRows.forEach((row, index) => {
+                if (index === 0) {
+                    gsap.set(row, { zIndex: 1 });
+                } else {
+                    gsap.set(row, { 
+                        yPercent: 100, 
+                        zIndex: index + 1
+                    });
+                    tl.to(row, {
+                        yPercent: 0,
+                        duration: 1,
+                        ease: "none"
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>
